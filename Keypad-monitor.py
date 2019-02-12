@@ -1,38 +1,46 @@
-#*********************************************************#
-#   Author  : iTechno
-#   email   : itechnolabz@gmail.com 
-#*********************************************************#
-
-
-#import
 import RPi.GPIO as GPIO
 import time
 from pad4pi import rpi_gpio
 
 #******************************************#
 KEYPAD = [
-    ["1", "2", "3", "A"],
-    ["4", "5", "6", "B"],
-    ["7", "8", "9", "C"],
-    ["*", "0", "#", "D"]
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+    ["7", "8", "9"],
+    ["*", "0", "#"]
 ]
 
-COL_PINS = [17, 15, 14, 4] # BCM numbering
+COL_PINS = [17,15,14] # BCM numbering
 ROW_PINS = [24,22,27,18] # BCM numbering
 
 factory = rpi_gpio.KeypadFactory()
 keypad = factory.create_keypad(keypad=KEYPAD, row_pins=ROW_PINS, col_pins=COL_PINS)
 
 #******************************************#
+passW = ""
 
 def printKey(key):
-    lcd_byte(ord(key),LCD_CHR)
+    global passW
+    passW = passW + key
+    if key == "*":
+      passW = ""
+    lcd_string(passW,LCD_LINE_2)
+    #lcd_byte(ord(key),LCD_CHR)
+    print(passW)
+    
+    if len(passW) == 6:
+      if passW == "123456":
+        print("Correct")
+        passW = ""
+      else:
+        print("Worng")
+        passW = ""
 
 #******************************************#
 
 # printKey will be called each time a keypad button is pressed
-keypad.registerKeyPressHandler(printKey)
 
+keypad.registerKeyPressHandler(printKey)
 
 
 
@@ -64,7 +72,7 @@ def main():
   # Main program block
   global pm
   global system_sts
-  
+  global passW
   GPIO.setwarnings(False)
   GPIO.setmode(GPIO.BCM)       # Use BCM GPIO numbers
   GPIO.setup(LCD_E, GPIO.OUT)  # E
@@ -78,10 +86,12 @@ def main():
   # Initialise display
   lcd_init()
   lcd_byte(0x01, LCD_CMD)
-  lcd_string("    Welcome",LCD_LINE_1)
+  lcd_string("    Welcome!",LCD_LINE_1)
   lcd_byte(0xC0, LCD_CMD)
   while True:
       time.sleep(1)
+      #if passW == "":
+      #  lcd_string("",LCD_LINE_2)
 
       
 #******************************************#  
@@ -94,7 +104,7 @@ def lcd_init():
   lcd_byte(0x28,LCD_CMD) # 101000 Data length, number of lines, font size
   lcd_byte(0x01,LCD_CMD) # 000001 Clear display
   time.sleep(E_DELAY)
-
+  
 #******************************************#
 def lcd_byte(bits, mode):
   # Send byte to data pins
@@ -137,7 +147,7 @@ def lcd_byte(bits, mode):
 
   # Toggle 'Enable' pin
   lcd_toggle_enable()
-
+  
 #******************************************#
 def lcd_toggle_enable():
   # Toggle enable
@@ -146,20 +156,31 @@ def lcd_toggle_enable():
   time.sleep(E_PULSE)
   GPIO.output(LCD_E, False)
   time.sleep(E_DELAY)
-
+  
 #***************************************#
 
 
 def lcd_string(message,line):
   # Send string to display
-
+  if message == "":
+    lcd_string("Insert Message",LCD_LINE_2)
+    return
+  if len(message) == 6:
+    if message == "123456":
+      lcd_string("    Correct!",LCD_LINE_2)
+      return
+    else:
+      lcd_string("     Error!",LCD_LINE_2)        
+      return
+      
   message = message.ljust(LCD_WIDTH," ")
 
   lcd_byte(line, LCD_CMD)
 
   for i in range(LCD_WIDTH):
     lcd_byte(ord(message[i]),LCD_CHR)
-    
+  
+  
 
 #******************************************#
 
