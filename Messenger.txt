@@ -1,4 +1,0 @@
-http://codelectron.com/how-to-interface-keypad-with-raspberry-pi/
-
-
-https://www.digikey.com/en/maker/blogs/2018/how-to-connect-a-raspberry-pi-to-a-16-x-2-lcd-display

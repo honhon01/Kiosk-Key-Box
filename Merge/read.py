@@ -4,13 +4,16 @@ import SimpleMFRC522
 
 reader = SimpleMFRC522.SimpleMFRC522()
 
-try:
+def RFIDread():
+	print('Place RFID to read...')
 	id,text = reader.read()
 	text = text.replace(' ','')
 	if text == 'CPE1121':
-		print('sure')
+		print('Correct Data = ' + text)
 	else:
-		print('no')
-	print(text)
-finally:
-	GPIO.cleanup()
+		print('Wrong   Data = ' + text)
+	
+	#GPIO.cleanup()
+
+
+#RFIDread()
