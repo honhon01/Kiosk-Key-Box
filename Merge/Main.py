@@ -1,5 +1,8 @@
 import RPi.GPIO as GPIO
 import time
+import Motor
+import read
+
 from pad4pi import rpi_gpio
 
 #******************************************#
@@ -23,18 +26,47 @@ def printKey(key):
     global passW
     passW = passW + key
     if key == "*":
-      passW = ""
-    lcd_string(passW,LCD_LINE_2)
-    #lcd_byte(ord(key),LCD_CHR)
-    print(passW)
-    
+        passW = ""
+        lcd_string("   Insert PIN",LCD_LINE_2)
+    else:
+        lcd_string(passW,LCD_LINE_2)
     if len(passW) == 6:
-      if passW == "123456":
-        print("Correct")
-        passW = ""
-      else:
-        print("Worng")
-        passW = ""
+        if passW == "123456":
+            print("Correct")
+            lcd_string("    Correct!",LCD_LINE_2)
+            passW = ""
+            
+            lcd_string("No Key Found!",LCD_LINE_2)
+            read.RFIDread()
+            print("RFID Founded Opening the door")
+            lcd_string("Unlocking!",LCD_LINE_2)
+            Motor.forward(3) #Motor open door
+            lcd_string("Unlocked!",LCD_LINE_2)
+            while 1:
+                starttime = time.time()
+                read.RFIDread()
+                endtime = time.time()
+                time.sleep(1)
+                if endtime-starttime > 5:
+                    print("Key Returned")
+                    break
+            lcd_string("  Key Returned",LCD_LINE_2)
+            time.sleep(2)
+            lcd_string("Locking The Door",LCD_LINE_2)
+            Motor.reverse(3) #Motor Close Door
+            lcd_string("  Door Locked!",LCD_LINE_2)
+            time.sleep(2)
+            lcd_string("   Completed!",LCD_LINE_1)
+            lcd_string("     Enjoy!",LCD_LINE_2)
+            time.sleep(5)
+            lcd_string("    Welcome!",LCD_LINE_1)
+            lcd_string(" Insert PIN",LCD_LINE_2)
+        else:
+            print("Wrong")
+            lcd_string("Invalid Password",LCD_LINE_2)
+            time.sleep(2)
+            lcd_string("   Insert PIN",LCD_LINE_2)
+            passW = ""
 
 #******************************************#
 
@@ -81,12 +113,17 @@ def main():
   GPIO.setup(LCD_D5, GPIO.OUT) # DB5
   GPIO.setup(LCD_D6, GPIO.OUT) # DB6
   GPIO.setup(LCD_D7, GPIO.OUT) # DB7
-
+  GPIO.setup(23, GPIO.OUT) #Motor1
+  GPIO.setup(24, GPIO.OUT) #Motor2
+  GPIO.setup(12, GPIO.OUT) #Motor3
+  GPIO.setup(16, GPIO.OUT) #Motor4
+  
 
   # Initialise display
   lcd_init()
   lcd_byte(0x01, LCD_CMD)
   lcd_string("    Welcome!",LCD_LINE_1)
+  lcd_string(" Insert PIN",LCD_LINE_2)
   lcd_byte(0xC0, LCD_CMD)
   while True:
       time.sleep(1)
@@ -163,14 +200,12 @@ def lcd_toggle_enable():
 def lcd_string(message,line):
   # Send string to display
   if message == "":
-    lcd_string("Insert Message",LCD_LINE_2)
+    
     return
   if len(message) == 6:
     if message == "123456":
-      lcd_string("    Correct!",LCD_LINE_2)
       return
-    else:
-      lcd_string("     Error!",LCD_LINE_2)        
+    else:       
       return
       
   message = message.ljust(LCD_WIDTH," ")
