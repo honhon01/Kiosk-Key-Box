@@ -21,9 +21,10 @@ keypad = factory.create_keypad(keypad=KEYPAD, row_pins=ROW_PINS, col_pins=COL_PI
 
 #******************************************#
 passW = ""
-
+counter = 0
 def printKey(key):
     global passW
+    global counter
     passW = passW + key
     if key == "*":
         passW = ""
@@ -66,6 +67,13 @@ def printKey(key):
             lcd_string("Invalid Password",LCD_LINE_2)
             time.sleep(2)
             lcd_string("   Insert PIN",LCD_LINE_2)
+            counter += 1
+            if counter == 3:
+                lcd_string("Keybox Disabled",LCD_LINE_1) #Keybox is Disabled
+                lcd_string(" for 20 seconds",LCD_LINE_2) #try again in 20 seconds
+                time.sleep(20)
+                lcd_string("    Welcome!",LCD_LINE_1)
+                lcd_string("   Insert PIN",LCD_LINE_2)
             passW = ""
 
 #******************************************#
@@ -123,7 +131,7 @@ def main():
   lcd_init()
   lcd_byte(0x01, LCD_CMD)
   lcd_string("    Welcome!",LCD_LINE_1)
-  lcd_string(" Insert PIN",LCD_LINE_2)
+  lcd_string("   Insert PIN",LCD_LINE_2)
   lcd_byte(0xC0, LCD_CMD)
   while True:
       time.sleep(1)
