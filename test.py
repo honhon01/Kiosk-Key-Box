@@ -1,4 +1,4 @@
-import http.client, json
+import http.client
 
 PinCode = '806388'
 conn = http.client.HTTPSConnection("carto.cpe.kmutt.ac.th")

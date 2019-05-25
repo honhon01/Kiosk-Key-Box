@@ -3,6 +3,7 @@ import time
 import Motor
 import read
 import datetime
+import http.client
 
 from pad4pi import rpi_gpio
 
@@ -40,7 +41,14 @@ def printKey(key):
         lcd_string(passW,LCD_LINE_2)
     if len(passW) == 6:
 		################ send pin to check with API ###############
-        if passW == "123456":
+        conn = http.client.HTTPSConnection("carto.cpe.kmutt.ac.th")
+        conn.request("GET", "/pin/validate?Pin="+passW)
+        r1 = conn.getresponse()
+        dataGet = r1.read().decode('utf-8')
+        conn.close()
+        print(r1.status, r1.reason)
+        print(dataGet)
+        if dataGet[8] == 't':
             print("Correct")
             lcd_string("    Correct!",LCD_LINE_2)
             passW = ""
@@ -48,7 +56,7 @@ def printKey(key):
             read.RFIDread()
             print("RFID Founded Opening the door")
             lcd_string("Unlocking!",LCD_LINE_2)
-            Motor.forward(3) #Motor open door
+            Motor.reverse(3) #Motor open door
             Motor.stop(1) #Stop the Motor
             lcd_string("Pick up the Key!",LCD_LINE_2)
             PickupTime = datetime.datetime.now()
@@ -67,13 +75,29 @@ def printKey(key):
             lcd_string("  Key Returned",LCD_LINE_2)
             time.sleep(2)
             lcd_string("Locking The Door",LCD_LINE_2)
-            Motor.reverse(3) #Motor Close Door
+            Motor.forward(3) #Motor Close Door
             Motor.stop(1) #Stop the Motor
             lcd_string("  Door Locked!",LCD_LINE_2)
             time.sleep(2)
             lcd_string("   Completed!",LCD_LINE_1)
             lcd_string("     Enjoy!",LCD_LINE_2)
             ################ send RoomUse information back to API ###############
+            UsageID='3'
+            if KeyUseTime > 180:
+                ReInTime = 'true'
+            else:
+                ReInTime = 'false'
+            BODY = "{\"UsageID\":"+UsageID+",\"ReturnInTime\":"+ReInTime+ "}"
+            headers = {"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjU4MDcwNTAzNDM4IiwiaWF0IjoxNTU1MDUzMTEwfQ.vFrdCwfSSQQ3UXpPruawuUOze0FCu_lbOHnFP2KcQqY"}
+            conn = http.client.HTTPSConnection("carto.cpe.kmutt.ac.th")
+            conn.request("PUT", "/pin/status", BODY,headers)
+            r1 = conn.getresponse()
+            dataPut = r1.read().decode('utf-8')
+            conn.close()
+            print(r1.status, r1.reason)
+            print("PUT : "+BODY)
+            print(dataPut)
+            ################ close API ###############
             time.sleep(5)
             GPIO.output(LCD_ON, False)
             print('off')
@@ -235,14 +259,7 @@ def lcd_toggle_enable():
 
 def lcd_string(message,line):
   # Send string to display
-  if message == "":
-    
-    return
-  if len(message) == 6:
-    if message == "123456":
-      return
-    else:       
-      return
+  
       
   message = message.ljust(LCD_WIDTH," ")
 
