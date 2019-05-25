@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import Motor
 import read
+import datetime
 
 from pad4pi import rpi_gpio
 
@@ -14,12 +15,18 @@ KEYPAD = [
 ]
 
 COL_PINS = [17,27,22] # BCM numbering
-ROW_PINS = [14,15,18,4] # BCM numbering
+ROW_PINS = [14,5,18,4] # BCM numbering
 
 factory = rpi_gpio.KeypadFactory()
 keypad = factory.create_keypad(keypad=KEYPAD, row_pins=ROW_PINS, col_pins=COL_PINS)
 
 #******************************************#
+# Memo
+# Send Back = KeyUseTime, PickupTime, ReturnTime
+#
+# returnInTime ?
+#######
+
 passW = ""
 counter = 0
 def printKey(key):
@@ -32,34 +39,47 @@ def printKey(key):
     else:
         lcd_string(passW,LCD_LINE_2)
     if len(passW) == 6:
+		################ send pin to check with API ###############
         if passW == "123456":
             print("Correct")
             lcd_string("    Correct!",LCD_LINE_2)
             passW = ""
-            
             lcd_string("No Key Found!",LCD_LINE_2)
             read.RFIDread()
             print("RFID Founded Opening the door")
             lcd_string("Unlocking!",LCD_LINE_2)
             Motor.forward(3) #Motor open door
-            lcd_string("Unlocked!",LCD_LINE_2)
+            Motor.stop(1) #Stop the Motor
+            lcd_string("Pick up the Key!",LCD_LINE_2)
+            PickupTime = datetime.datetime.now()
+            print(PickupTime)
             while 1:
                 starttime = time.time()
                 read.RFIDread()
                 endtime = time.time()
                 time.sleep(1)
                 if endtime-starttime > 5:
-                    print("Key Returned")
+                    KeyUseTime = endtime-starttime
+                    ReturnTime = datetime.datetime.now()
+                    print(KeyUseTime)
+                    print(ReturnTime)
                     break
             lcd_string("  Key Returned",LCD_LINE_2)
             time.sleep(2)
             lcd_string("Locking The Door",LCD_LINE_2)
             Motor.reverse(3) #Motor Close Door
+            Motor.stop(1) #Stop the Motor
             lcd_string("  Door Locked!",LCD_LINE_2)
             time.sleep(2)
             lcd_string("   Completed!",LCD_LINE_1)
             lcd_string("     Enjoy!",LCD_LINE_2)
+            ################ send RoomUse information back to API ###############
             time.sleep(5)
+            GPIO.output(LCD_ON, False)
+            print('off')
+            time.sleep(5)
+            GPIO.output(LCD_ON, True)
+            print('on')
             lcd_string("    Welcome!",LCD_LINE_1)
             lcd_string(" Insert PIN",LCD_LINE_2)
         else:
@@ -72,6 +92,7 @@ def printKey(key):
                 lcd_string("Keybox Disabled",LCD_LINE_1) #Keybox is Disabled
                 lcd_string(" for 20 seconds",LCD_LINE_2) #try again in 20 seconds
                 time.sleep(20)
+                counter = 0
                 lcd_string("    Welcome!",LCD_LINE_1)
                 lcd_string("   Insert PIN",LCD_LINE_2)
             passW = ""
@@ -91,7 +112,7 @@ LCD_D4 = 26
 LCD_D5 = 19
 LCD_D6 = 13
 LCD_D7 = 6
-
+LCD_ON = 15
 
 
 # Define LCD parameters
@@ -125,14 +146,21 @@ def main():
   GPIO.setup(24, GPIO.OUT) #Motor2
   GPIO.setup(12, GPIO.OUT) #Motor3
   GPIO.setup(16, GPIO.OUT) #Motor4
+  GPIO.setup(LCD_ON,GPIO.OUT)
   
-
+  #Stop Motor
+  GPIO.output(23, False)
+  GPIO.output(24, False)
+  GPIO.output(12, False)
+  GPIO.output(16, False)
+  
   # Initialise display
   lcd_init()
   lcd_byte(0x01, LCD_CMD)
   lcd_string("    Welcome!",LCD_LINE_1)
   lcd_string("   Insert PIN",LCD_LINE_2)
   lcd_byte(0xC0, LCD_CMD)
+  GPIO.output(LCD_ON, True)
   while True:
       time.sleep(1)
       #if passW == "":

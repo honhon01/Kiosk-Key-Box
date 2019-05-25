@@ -31,6 +31,15 @@ def reverse(tf):
 	print ("DONE")
 	#GPIO.cleanup()
 	
+def stop(tf):
+	#init()
+	GPIO.output(23, False)
+	GPIO.output(24, False)
+	GPIO.output(12, False)
+	GPIO.output(16, False)
+	time.sleep(tf)
+	print ("DONE")
+	
 #print ("forward")
 #forward(3)
 #print ("reverse")
