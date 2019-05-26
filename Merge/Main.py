@@ -85,7 +85,7 @@ def printKey(key):
             lcd_string("   Completed!",LCD_LINE_1)
             lcd_string("     Enjoy!",LCD_LINE_2)
             ################ send RoomUse information back to API ###############
-            if KeyUseTime > 180:
+            if KeyUseTime < 180:
                 ReInTime = 'true'
             else:
                 ReInTime = 'false'
