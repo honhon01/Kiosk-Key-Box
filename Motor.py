@@ -25,8 +25,19 @@ def reverse(tf):
 	gpio.output(16, True)
 	time.sleep(tf)
 	gpio.cleanup()
+
+def stop(tf):
+	init()
+	gpio.output(23, False)
+	gpio.output(24, False)
+	gpio.output(12, False)
+	gpio.output(16, False)
+	time.sleep(tf)
+	gpio.cleanup()
 	
-print ("forward")
-forward(3)
+
 print ("reverse")
-reverse(3)
+reverse(4)
+print ("forward")
+forward(4)
+
