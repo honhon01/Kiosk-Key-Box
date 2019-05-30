@@ -35,6 +35,7 @@ def printKey(key):
         lcd_string(passW,LCD_LINE_2)
     if len(passW) == 6:
 		################ send pin to check with API ###############
+        print("Password = " + passW)
         conn = http.client.HTTPSConnection("carto.cpe.kmutt.ac.th")
         conn.request("GET", "/pin/validate?Pin="+passW)
         r1 = conn.getresponse()
